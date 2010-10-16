@@ -6,18 +6,50 @@
 // @include       http://twitter.com/*
 // ==/UserScript==
 
-function updateFollowCost() {
-  if($('#profile')) {
-    var m=/^http[s]{0,1}:\/\/twitter.com\/(\w+)/.exec(window.location.href);
+function noFollowCostDefinedBeneath(element) {
+  return 0 == element.find('.follow-cost').length
+}
+
+function findUsername(profileElement) {
+  username = false;
+  if(0 == profileElement.find('.screen-name strong').length) {
+    // Grab from the URL
+    var m=/^http[s]{0,1}:\/\/twitter.com\/(\w+)|(\#!\/(\w+))\/?/.exec(window.location.href);
     if(m) {
-      var username = m[1];
-      $.getJSON("http://followcost.com/" + username + ".json?callback=?", function(json) {
-        var markup = "<li><span class='label'>Follow Cost</span> <a href='http://followcost.com/" + username +"' class='url' rel='nofollow'>" + json.milliscobles_all_time + " m&Sigma;</a></li>"
-        var ul = $('#profile').find('ul.about');
-        ul.html(ul.html() + markup);
-      });
+      username = (undefined == m[1] ? m[3] : m[1]);
     }
+  } else {
+    username = profileElement.find('.screen-name strong').html().replace(/^@/, '');
   }
+  return username;
+}
+
+function updateFollowCost() {
+  $('.profile-basics, .profile-dashboard').each(function() {
+    if(noFollowCostDefinedBeneath($(this))) {
+      var username = findUsername($(this));
+      if(username) {
+        var ul = $(this).find('.user-stats');
+        $.getJSON("http://followcost.com/" + username + ".json?callback=?", function(json) {
+          var markup = '<li><a class="user-stats-count follow-cost" href="http://followcost.com/' + username + '">' + Math.round(parseFloat(json.average_tweets_per_day_recently)*100)/100 + '<span class="user-stats-stat">Follow Cost</span></a></li>';
+          if(noFollowCostDefinedBeneath(ul)) {
+            ul.html(ul.html() + markup);
+          }
+        });
+      }
+    }
+  });
+}
+
+function updateFollowCostAfterInterval() {
+  var executions = 0;
+  intervalId = window.setInterval(function() {
+    updateFollowCost();
+    if(executions >= 300) {
+      window.clearInterval(intervalId);
+    }
+    executions++;
+  }, 2000);
 }
 
 function GM_wait()
@@ -34,11 +66,11 @@ function GM_wait()
 
 function letsJQuery()
 {
-  updateFollowCost();
+  updateFollowCostAfterInterval();
 }
 
 if(navigator.appVersion.match('AppleWebKit')) {
-  updateFollowCost();
+  updateFollowCostAfterInterval();
 } else {
   GM_wait();
 }
