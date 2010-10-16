@@ -31,7 +31,7 @@ function updateFollowCost() {
       if(username) {
         var ul = $(this).find('.user-stats');
         $.getJSON("http://followcost.com/" + username + ".json?callback=?", function(json) {
-          var markup = '<li><a class="user-stats-count follow-cost" href="http://followcost.com/' + username + '">' + Math.round(parseFloat(json.average_tweets_per_day_recently)*100)/100 + '<span class="user-stats-stat">Follow Cost</span></a></li>';
+          var markup = '<li><a class="user-stats-count follow-cost" href="http://followcost.com/' + username + '">' + Math.round(parseFloat(json.average_tweets_per_day)*100)/100 + '<span class="user-stats-stat">Follow Cost</span></a></li>';
           if(noFollowCostDefinedBeneath(ul)) {
             ul.html(ul.html() + markup);
           }
